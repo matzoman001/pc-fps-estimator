@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Where to Buy - PC Game FPS Estimator</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0c0d38">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <h1 class="site-title">Where to Buy</h1>
+  </div>
+</header>
+
+<section class="type-toggle-section">
+  <span class="type-toggle-label">Choose a View</span>
+  <nav class="mode-tabs" role="tablist" aria-label="Choose view">
+    <button class="mode-tab" data-view="prebuilt" role="tab" aria-selected="false">Prebuilt PCs</button>
+    <button class="mode-tab" data-view="parts" role="tab" aria-selected="false">PC Parts</button>
+  </nav>
+</section>
+
+<main class="buy-layout">
+  <a class="back-link" href="index.html">&larr; Back to FPS Estimator</a>
+
+  <div id="highlight-banner"></div>
+
+  <section class="panel buy-view" id="prebuilt-view">
+    <h2 class="panel-title">Prebuilt PCs</h2>
+    <p class="result-sub" style="margin-bottom:16px;">Prebuilts are sold as complete systems, so these link to performance tiers to search for rather than one specific model.</p>
+    <div id="prebuilt-list"></div>
+  </section>
+
+  <section class="panel buy-view" id="parts-view">
+    <h2 class="panel-title">PC Parts</h2>
+    <p class="result-sub" style="margin-bottom:16px;">These link to retailer search results for each part rather than a specific product page, since exact listings and prices change often. Laptop components generally aren't sold or upgraded separately - see the Prebuilt tab for laptops.</p>
+    <div id="parts-buy-list"></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>Links open retailer search results in a new tab. Availability, pricing, and specific models change frequently and are not tracked in this app.</p>
+</footer>
+
+<script src="data.js"></script>
+<script src="buy.js"></script>
+<script src="register-sw.js"></script>
+</body>
+</html>
