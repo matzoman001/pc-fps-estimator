@@ -69,7 +69,8 @@ const DESKTOP_PARTS = {
     { id: "ram8", name: "8 GB", gb: 8, price: 30 },
     { id: "ram16", name: "16 GB", gb: 16, price: 55 },
     { id: "ram32", name: "32 GB", gb: 32, price: 100 },
-    { id: "ram64", name: "64 GB", gb: 64, price: 190 }
+    { id: "ram64", name: "64 GB", gb: 64, price: 190 },
+    { id: "ram128", name: "128 GB", gb: 128, price: 380 }
   ],
   motherboard: {
     Intel: [
@@ -130,7 +131,8 @@ const LAPTOP_PARTS = {
     { id: "ram8", name: "8 GB", gb: 8, price: 30 },
     { id: "ram16", name: "16 GB", gb: 16, price: 55 },
     { id: "ram32", name: "32 GB", gb: 32, price: 100 },
-    { id: "ram64", name: "64 GB", gb: 64, price: 190 }
+    { id: "ram64", name: "64 GB", gb: 64, price: 190 },
+    { id: "ram128", name: "128 GB", gb: 128, price: 380 }
   ],
   chassis: [
     { id: "thin-light", name: "Thin & Light", multiplier: 0.88, price: 0 },
@@ -263,3 +265,11 @@ const GAMES = [
 
 const PRESET_ORDER = ["low", "medium", "high", "ultra"];
 const PRESET_LABELS = { low: "Low", medium: "Medium", high: "High", ultra: "Ultra" };
+
+/* Memory generation - affects effective bandwidth/latency, applied as a
+   flat multiplier on top of the capacity-based ramFactor. */
+const RAM_TYPES = [
+  { id: "ddr3", name: "DDR3", multiplier: 0.85 },
+  { id: "ddr4", name: "DDR4", multiplier: 1.0 },
+  { id: "ddr5", name: "DDR5", multiplier: 1.06 }
+];

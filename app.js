@@ -12,10 +12,11 @@ const state = {
     cpu: null,
     gpu: null,
     ram: null,
+    ramType: null, // DDR3/DDR4/DDR5 id
     extra: null // motherboard id (desktop) or chassis id (laptop)
   },
   builds: {
-    A: null, // snapshot: { mode, cpu, gpu, ram, extra }
+    A: null, // snapshot: { mode, cpu, gpu, ram, ramType, extra }
     B: null
   }
 };
@@ -43,6 +44,9 @@ function getSelectedGpu() {
 function getSelectedRam() {
   return currentParts().ram.find(r => r.id === state.parts.ram);
 }
+function getSelectedRamType() {
+  return RAM_TYPES.find(t => t.id === state.parts.ramType);
+}
 function getSelectedExtra() {
   if (state.mode === "desktop") {
     return findInGroup(currentParts().motherboard, state.parts.extra);
@@ -55,7 +59,7 @@ function getSelectedGame() {
 
 /* ---------- FPS calculation ---------- */
 
-function calcFPS(game, cpu, gpu, ramGB, preset, resolution, chassisMultiplier) {
+function calcFPS(game, cpu, gpu, ramGB, preset, resolution, chassisMultiplier, ramTypeMultiplier) {
   const gpuNorm = Math.pow(gpu.score / REFERENCE_SCORE, game.gpuWeight);
   const cpuNorm = Math.pow(cpu.score / REFERENCE_SCORE, game.cpuWeight);
 
@@ -66,7 +70,7 @@ function calcFPS(game, cpu, gpu, ramGB, preset, resolution, chassisMultiplier) {
   const resFactor = RESOLUTION_MULTIPLIER[resolution];
   const base = game.presets[preset];
 
-  const fps = base * gpuNorm * cpuNorm * ramFactor * resFactor * (chassisMultiplier || 1);
+  const fps = base * gpuNorm * cpuNorm * ramFactor * resFactor * (chassisMultiplier || 1) * (ramTypeMultiplier || 1);
   return Math.max(1, Math.round(fps));
 }
 
@@ -75,10 +79,11 @@ function resolveSnapshotParts(snapshot) {
   const cpu = findInGroup(partsData.cpu, snapshot.cpu);
   const gpu = findInGroup(partsData.gpu, snapshot.gpu);
   const ram = partsData.ram.find(r => r.id === snapshot.ram);
+  const ramType = RAM_TYPES.find(t => t.id === snapshot.ramType);
   const extra = snapshot.mode === "desktop"
     ? findInGroup(partsData.motherboard, snapshot.extra)
     : partsData.chassis.find(c => c.id === snapshot.extra);
-  return { cpu, gpu, ram, extra };
+  return { cpu, gpu, ram, ramType, extra };
 }
 
 function snapshotCurrentBuild() {
@@ -87,18 +92,37 @@ function snapshotCurrentBuild() {
     cpu: state.parts.cpu,
     gpu: state.parts.gpu,
     ram: state.parts.ram,
+    ramType: state.parts.ramType,
     extra: state.parts.extra
   };
+}
+
+function getMaxScore(groupObj) {
+  let max = -Infinity;
+  Object.values(groupObj).forEach(list => {
+    list.forEach(item => { if (item.score > max) max = item.score; });
+  });
+  return max;
 }
 
 function getBottleneck(game, cpu, gpu) {
   const gpuNorm = Math.pow(gpu.score / REFERENCE_SCORE, game.gpuWeight);
   const cpuNorm = Math.pow(cpu.score / REFERENCE_SCORE, game.cpuWeight);
 
+  const parts = currentParts();
+  const gpuIsBest = gpu.score >= getMaxScore(parts.gpu);
+  const cpuIsBest = cpu.score >= getMaxScore(parts.cpu);
+
   if (gpuNorm < cpuNorm * 0.85) {
+    if (gpuIsBest) {
+      return { type: "balanced", text: "GPU-bound, but this is already the strongest graphics card available - you're near the ceiling for this build." };
+    }
     return { type: "gpu", text: "GPU-bound - a stronger graphics card would improve FPS further." };
   }
   if (cpuNorm < gpuNorm * 0.85) {
+    if (cpuIsBest) {
+      return { type: "balanced", text: "CPU-bound, but this is already the strongest processor available - you're near the ceiling for this build." };
+    }
     return { type: "cpu", text: "CPU-bound - a stronger processor would improve FPS further." };
   }
   return { type: "balanced", text: "Well balanced build for this game and these settings." };
@@ -224,6 +248,14 @@ function renderPartSelectors() {
   cpuField.innerHTML = `<label>Processor (CPU)</label>`;
   cpuField.appendChild(buildOptGroupSelect(parts.cpu, state.parts.cpu, val => {
     state.parts.cpu = val;
+    if (state.mode === "desktop") {
+      const newCpuBrand = findInGroup(parts.cpu, val).brand;
+      const currentBoard = findInGroup(parts.motherboard, state.parts.extra);
+      if (!currentBoard || currentBoard.platform !== newCpuBrand) {
+        state.parts.extra = parts.motherboard[newCpuBrand][0].id;
+      }
+      renderPartSelectors();
+    }
     renderResults();
   }));
   container.appendChild(cpuField);
@@ -238,22 +270,34 @@ function renderPartSelectors() {
   }));
   container.appendChild(gpuField);
 
-  // RAM
+  // RAM capacity
   const ramField = document.createElement("div");
   ramField.className = "part-field";
-  ramField.innerHTML = `<label>Memory (RAM)</label>`;
+  ramField.innerHTML = `<label>Memory Capacity</label>`;
   ramField.appendChild(buildFlatSelect(parts.ram, state.parts.ram, val => {
     state.parts.ram = val;
     renderResults();
   }));
   container.appendChild(ramField);
 
+  // RAM type
+  const ramTypeField = document.createElement("div");
+  ramTypeField.className = "part-field";
+  ramTypeField.innerHTML = `<label>Memory Type</label>`;
+  ramTypeField.appendChild(buildFlatSelect(RAM_TYPES, state.parts.ramType, val => {
+    state.parts.ramType = val;
+    renderResults();
+  }));
+  container.appendChild(ramTypeField);
+
   // Extra: motherboard (desktop) or chassis (laptop)
   const extraField = document.createElement("div");
   extraField.className = "part-field";
   if (state.mode === "desktop") {
-    extraField.innerHTML = `<label>Motherboard</label>`;
-    extraField.appendChild(buildOptGroupSelect(parts.motherboard, state.parts.extra, val => {
+    const cpuBrand = getSelectedCpu().brand;
+    const compatibleBoards = { [cpuBrand]: parts.motherboard[cpuBrand] };
+    extraField.innerHTML = `<label>Motherboard (${cpuBrand}-compatible)</label>`;
+    extraField.appendChild(buildOptGroupSelect(compatibleBoards, state.parts.extra, val => {
       state.parts.extra = val;
       renderResults();
     }));
@@ -274,6 +318,7 @@ function applyDefaultParts() {
   state.parts.cpu = parts.cpu.Intel[2].id;
   state.parts.gpu = parts.gpu.NVIDIA[5].id;
   state.parts.ram = parts.ram[1].id;
+  state.parts.ramType = RAM_TYPES[1].id;
   state.parts.extra = state.mode === "desktop" ? parts.motherboard.Intel[1].id : parts.chassis[1].id;
 }
 
@@ -288,9 +333,14 @@ function ensureValidParts() {
   if (!state.parts.ram || !parts.ram.find(r => r.id === state.parts.ram)) {
     state.parts.ram = parts.ram[1].id;
   }
+  if (!state.parts.ramType || !RAM_TYPES.find(t => t.id === state.parts.ramType)) {
+    state.parts.ramType = RAM_TYPES[1].id;
+  }
   if (state.mode === "desktop") {
-    if (!state.parts.extra || !findInGroup(parts.motherboard, state.parts.extra)) {
-      state.parts.extra = parts.motherboard.Intel[1].id;
+    const cpuBrand = findInGroup(parts.cpu, state.parts.cpu).brand;
+    const currentBoard = findInGroup(parts.motherboard, state.parts.extra);
+    if (!currentBoard || currentBoard.platform !== cpuBrand) {
+      state.parts.extra = parts.motherboard[cpuBrand][0].id;
     }
   } else {
     if (!state.parts.extra || !parts.chassis.find(c => c.id === state.parts.extra)) {
@@ -333,10 +383,11 @@ function renderSidebar() {
   const cpu = getSelectedCpu();
   const gpu = getSelectedGpu();
   const ram = getSelectedRam();
+  const ramType = getSelectedRamType();
   const extra = getSelectedExtra();
   const chassisMult = state.mode === "laptop" && extra ? extra.multiplier : 1;
 
-  const fps = calcFPS(game, cpu, gpu, ram.gb, state.preset, state.resolution, chassisMult);
+  const fps = calcFPS(game, cpu, gpu, ram.gb, state.preset, state.resolution, chassisMult, ramType.multiplier);
   const bottleneck = getBottleneck(game, cpu, gpu);
 
   container.innerHTML = `
@@ -348,7 +399,7 @@ function renderSidebar() {
     <ul class="build-summary">
       <li>CPU: <span>${cpu.name}</span></li>
       <li>GPU: <span>${gpu.name}</span></li>
-      <li>RAM: <span>${ram.name}</span></li>
+      <li>RAM: <span>${ram.name} ${ramType.name}</span></li>
       <li>${state.mode === "desktop" ? "Motherboard" : "Chassis"}: <span>${extra.name}</span></li>
     </ul>
   `;
@@ -366,21 +417,17 @@ function renderBottomResults() {
   const cpu = getSelectedCpu();
   const gpu = getSelectedGpu();
   const ram = getSelectedRam();
+  const ramType = getSelectedRamType();
   const extra = getSelectedExtra();
   const chassisMult = state.mode === "laptop" && extra ? extra.multiplier : 1;
 
   const allPresetFps = {};
   PRESET_ORDER.forEach(p => {
-    allPresetFps[p] = calcFPS(game, cpu, gpu, ram.gb, p, state.resolution, chassisMult);
+    allPresetFps[p] = calcFPS(game, cpu, gpu, ram.gb, p, state.resolution, chassisMult, ramType.multiplier);
   });
   const maxFps = Math.max(...Object.values(allPresetFps));
 
   const bottleneck = getBottleneck(game, cpu, gpu);
-
-  let compatNote = "";
-  if (state.mode === "desktop" && extra && cpu.brand !== extra.platform) {
-    compatNote = `<div class="compat-note">Compatibility note: your selected motherboard chipset is built for ${extra.platform} processors, but you have selected an ${cpu.brand} CPU. Double-check socket compatibility on a real build.</div>`;
-  }
 
   const barsHtml = PRESET_ORDER.map(p => {
     const val = allPresetFps[p];
@@ -400,7 +447,6 @@ function renderBottomResults() {
         <p class="result-sub" style="margin-bottom:12px;">FPS by quality preset at ${RES_LABELS[state.resolution]} for your current build</p>
         <div class="preset-bars">${barsHtml}</div>
         <div class="result-bottleneck ${bottleneck.type === "balanced" ? "" : "warn"}" style="margin-top:16px;">${bottleneck.text}</div>
-        ${compatNote}
       </div>
       <div>
         <p class="result-sub" style="margin-bottom:12px;">Full build summary</p>
@@ -411,7 +457,7 @@ function renderBottomResults() {
           <tr><td>Resolution</td><td>${RES_LABELS[state.resolution]}</td></tr>
           <tr><td>CPU</td><td>${cpu.name}</td></tr>
           <tr><td>GPU</td><td>${gpu.name}</td></tr>
-          <tr><td>RAM</td><td>${ram.name}</td></tr>
+          <tr><td>RAM</td><td>${ram.name} ${ramType.name}</td></tr>
           <tr><td>${state.mode === "desktop" ? "Motherboard" : "Chassis"}</td><td>${extra.name}</td></tr>
           <tr><td>Estimated FPS</td><td>${allPresetFps[state.preset]}</td></tr>
         </table>
@@ -437,12 +483,12 @@ function startOver() {
   syncURL();
 }
 
-function buildSummaryList(cpu, gpu, ram, extra, mode) {
+function buildSummaryList(cpu, gpu, ram, ramType, extra, mode) {
   return `
     <ul class="build-summary">
       <li>CPU: <span>${cpu.name}</span></li>
       <li>GPU: <span>${gpu.name}</span></li>
-      <li>RAM: <span>${ram.name}</span></li>
+      <li>RAM: <span>${ram.name} ${ramType.name}</span></li>
       <li>${mode === "desktop" ? "Motherboard" : "Chassis"}: <span>${extra.name}</span></li>
     </ul>
   `;
@@ -463,7 +509,7 @@ function renderCompare() {
   const game = getSelectedGame();
 
   const partsA = state.builds.A ? resolveSnapshotParts(state.builds.A) : null;
-  const validA = partsA && partsA.cpu && partsA.gpu && partsA.ram && partsA.extra;
+  const validA = partsA && partsA.cpu && partsA.gpu && partsA.ram && partsA.ramType && partsA.extra;
 
   if (!validA) {
     container.innerHTML = `
@@ -477,12 +523,12 @@ function renderCompare() {
   const cardA = `
     <div class="compare-slot filled">
       <div class="compare-slot-title">Saved Build <span class="compare-slot-tag">${state.builds.A.mode === "desktop" ? "Desktop" : "Laptop"}</span></div>
-      ${buildSummaryList(partsA.cpu, partsA.gpu, partsA.ram, partsA.extra, state.builds.A.mode)}
+      ${buildSummaryList(partsA.cpu, partsA.gpu, partsA.ram, partsA.ramType, partsA.extra, state.builds.A.mode)}
     </div>
   `;
 
   const partsB = state.builds.B ? resolveSnapshotParts(state.builds.B) : null;
-  const validB = partsB && partsB.cpu && partsB.gpu && partsB.ram && partsB.extra;
+  const validB = partsB && partsB.cpu && partsB.gpu && partsB.ram && partsB.ramType && partsB.extra;
 
   if (!validB) {
     container.innerHTML = `
@@ -500,7 +546,7 @@ function renderCompare() {
   const cardB = `
     <div class="compare-slot filled">
       <div class="compare-slot-title">Comparison Build <span class="compare-slot-tag">${state.builds.B.mode === "desktop" ? "Desktop" : "Laptop"}</span></div>
-      ${buildSummaryList(partsB.cpu, partsB.gpu, partsB.ram, partsB.extra, state.builds.B.mode)}
+      ${buildSummaryList(partsB.cpu, partsB.gpu, partsB.ram, partsB.ramType, partsB.extra, state.builds.B.mode)}
     </div>
   `;
 
@@ -512,8 +558,8 @@ function renderCompare() {
     const multB = state.builds.B.mode === "laptop" ? partsB.extra.multiplier : 1;
 
     const rows = PRESET_ORDER.map(p => {
-      const fpsA = calcFPS(game, partsA.cpu, partsA.gpu, partsA.ram.gb, p, state.resolution, multA);
-      const fpsB = calcFPS(game, partsB.cpu, partsB.gpu, partsB.ram.gb, p, state.resolution, multB);
+      const fpsA = calcFPS(game, partsA.cpu, partsA.gpu, partsA.ram.gb, p, state.resolution, multA, partsA.ramType.multiplier);
+      const fpsB = calcFPS(game, partsB.cpu, partsB.gpu, partsB.ram.gb, p, state.resolution, multB, partsB.ramType.multiplier);
       const diff = fpsB - fpsA;
       const diffText = diff === 0 ? "Tied" : (diff > 0 ? `Comparison +${diff} FPS` : `Saved +${-diff} FPS`);
       return `
@@ -546,12 +592,12 @@ function renderCompare() {
 /* ---------- Save/share via URL ---------- */
 
 function snapshotToParam(snap) {
-  return [snap.mode === "desktop" ? "d" : "l", snap.cpu, snap.gpu, snap.ram, snap.extra].join(",");
+  return [snap.mode === "desktop" ? "d" : "l", snap.cpu, snap.gpu, snap.ram, snap.ramType, snap.extra].join(",");
 }
 
 function paramToSnapshot(str) {
-  const [m, cpu, gpu, ram, extra] = str.split(",");
-  return { mode: m === "l" ? "laptop" : "desktop", cpu, gpu, ram, extra };
+  const [m, cpu, gpu, ram, ramType, extra] = str.split(",");
+  return { mode: m === "l" ? "laptop" : "desktop", cpu, gpu, ram, ramType, extra };
 }
 
 function syncURL() {
@@ -563,6 +609,7 @@ function syncURL() {
   if (state.parts.cpu) params.set("c", state.parts.cpu);
   if (state.parts.gpu) params.set("v", state.parts.gpu);
   if (state.parts.ram) params.set("a", state.parts.ram);
+  if (state.parts.ramType) params.set("t", state.parts.ramType);
   if (state.parts.extra) params.set("e", state.parts.extra);
   if (state.builds.A) params.set("ba", snapshotToParam(state.builds.A));
   if (state.builds.B) params.set("bb", snapshotToParam(state.builds.B));
@@ -584,6 +631,7 @@ function loadStateFromURL() {
   if (params.has("c")) state.parts.cpu = params.get("c");
   if (params.has("v")) state.parts.gpu = params.get("v");
   if (params.has("a")) state.parts.ram = params.get("a");
+  if (params.has("t")) state.parts.ramType = params.get("t");
   if (params.has("e")) state.parts.extra = params.get("e");
   if (params.has("ba")) state.builds.A = paramToSnapshot(params.get("ba"));
   if (params.has("bb")) state.builds.B = paramToSnapshot(params.get("bb"));

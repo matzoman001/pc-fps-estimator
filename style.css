@@ -295,16 +295,6 @@ body {
   border-color: var(--accent);
 }
 
-.compat-note {
-  margin-top: 14px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  background: rgba(224, 164, 88, 0.12);
-  border: 1px solid var(--warn);
-  color: var(--warn);
-  font-size: 0.85rem;
-}
-
 /* ---------- Sidebar result ---------- */
 
 .sidebar-card {
