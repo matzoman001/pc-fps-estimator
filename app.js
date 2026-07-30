@@ -97,11 +97,10 @@ function snapshotCurrentBuild() {
   };
 }
 
-function getMaxScore(groupObj) {
+function getMaxScoreInBrand(groupObj, brand) {
+  const list = groupObj[brand] || [];
   let max = -Infinity;
-  Object.values(groupObj).forEach(list => {
-    list.forEach(item => { if (item.score > max) max = item.score; });
-  });
+  list.forEach(item => { if (item.score > max) max = item.score; });
   return max;
 }
 
@@ -110,18 +109,18 @@ function getBottleneck(game, cpu, gpu) {
   const cpuNorm = Math.pow(cpu.score / REFERENCE_SCORE, game.cpuWeight);
 
   const parts = currentParts();
-  const gpuIsBest = gpu.score >= getMaxScore(parts.gpu);
-  const cpuIsBest = cpu.score >= getMaxScore(parts.cpu);
+  const gpuIsBest = gpu.score >= getMaxScoreInBrand(parts.gpu, gpu.brand);
+  const cpuIsBest = cpu.score >= getMaxScoreInBrand(parts.cpu, cpu.brand);
 
   if (gpuNorm < cpuNorm * 0.85) {
     if (gpuIsBest) {
-      return { type: "balanced", text: "GPU-bound, but this is already the strongest graphics card available - you're near the ceiling for this build." };
+      return { type: "balanced", text: `GPU-bound, but this is already the strongest ${gpu.brand} graphics card available - you're near the ceiling for this build.` };
     }
     return { type: "gpu", text: "GPU-bound - a stronger graphics card would improve FPS further." };
   }
   if (cpuNorm < gpuNorm * 0.85) {
     if (cpuIsBest) {
-      return { type: "balanced", text: "CPU-bound, but this is already the strongest processor available - you're near the ceiling for this build." };
+      return { type: "balanced", text: `CPU-bound, but this is already the strongest ${cpu.brand} processor available - you're near the ceiling for this build.` };
     }
     return { type: "cpu", text: "CPU-bound - a stronger processor would improve FPS further." };
   }
