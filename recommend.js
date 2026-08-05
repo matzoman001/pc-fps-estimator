@@ -1,8 +1,11 @@
 /* ============================================================
    Get a PC Built For You - recommendation engine
-   Generates a few CPU+GPU combos that fit a budget, scored by
-   estimated FPS across the user's chosen games, using the same
-   performance model as the main builder.
+   Generates a few CPU+GPU combos that fit a price range and clear
+   a minimum FPS target, scored across the user's chosen games,
+   using the same performance model as the main builder. If nothing
+   fits both the price range and the FPS floor, two fallback builds
+   are shown instead: the cheapest option that hits the FPS target,
+   and the best FPS available within the stated budget ceiling.
    ============================================================ */
 
 const RES_LABELS_REC = { "1080p": "1080p", "1440p": "1440p", "4k": "4K" };
@@ -120,6 +123,35 @@ function renderRecSettings() {
   });
 }
 
+/* ---------- Range sliders (two linked inputs per range) ---------- */
+
+function setupRangeSlider(minId, maxId, minLabelId, maxLabelId) {
+  const minInput = document.getElementById(minId);
+  const maxInput = document.getElementById(maxId);
+  const minLabel = document.getElementById(minLabelId);
+  const maxLabel = document.getElementById(maxLabelId);
+
+  function update(movedInput) {
+    let minVal = Number(minInput.value);
+    let maxVal = Number(maxInput.value);
+    if (minVal > maxVal) {
+      if (movedInput === maxInput) {
+        minVal = maxVal;
+        minInput.value = minVal;
+      } else {
+        maxVal = minVal;
+        maxInput.value = maxVal;
+      }
+    }
+    minLabel.textContent = minVal;
+    maxLabel.textContent = maxVal;
+  }
+
+  minInput.addEventListener("input", () => update(minInput));
+  maxInput.addEventListener("input", () => update(maxInput));
+  update(minInput);
+}
+
 /* ---------- Mode switching ---------- */
 
 function switchRecMode(mode) {
@@ -142,15 +174,12 @@ function getCheapestCompatibleExtra(mode, cpuBrand) {
   return parts.chassis.find(c => c.id === "standard-gaming");
 }
 
-function generateRecommendations() {
+function buildAllCombos(priceMidpoint) {
   const parts = currentRecParts();
-  const budgetInput = Number(document.getElementById("budget-input").value);
-  const budget = Math.max(200, isNaN(budgetInput) ? 1200 : budgetInput);
-
   const selectedGames = GAMES.filter(g => recState.selectedGameIds.has(g.id));
   const gamesToScore = selectedGames.length > 0 ? selectedGames : GAMES;
 
-  const ramGB = budget >= 1800 ? 32 : 16;
+  const ramGB = priceMidpoint >= 1800 ? 32 : 16;
   const ram = parts.ram.find(r => r.gb === ramGB);
 
   const cpus = [];
@@ -173,16 +202,43 @@ function generateRecommendations() {
     });
   });
 
-  const withinBudget = allCombos.filter(c => c.price <= budget);
+  return { allCombos, gamesToScore };
+}
 
-  if (withinBudget.length === 0) {
-    const cheapest = [...allCombos].sort((a, b) => a.price - b.price)[0];
-    return { budget, gamesToScore, picks: [{ label: "Closest Available", ...cheapest }], overBudget: true };
+function generateRecommendations() {
+  const priceMin = Number(document.getElementById("price-min").value);
+  const priceMax = Number(document.getElementById("price-max").value);
+  const fpsMin = Number(document.getElementById("fps-min").value);
+  const fpsMax = Number(document.getElementById("fps-max").value);
+
+  const { allCombos, gamesToScore } = buildAllCombos((priceMin + priceMax) / 2);
+
+  const inBand = allCombos.filter(c => c.price >= priceMin && c.price <= priceMax && c.avgFps >= fpsMin);
+
+  if (inBand.length === 0) {
+    const meetsFpsFloor = allCombos.filter(c => c.avgFps >= fpsMin);
+    const performanceCombo = meetsFpsFloor.length > 0
+      ? meetsFpsFloor.reduce((min, c) => (c.price < min.price ? c : min))
+      : allCombos.reduce((best, c) => (c.avgFps > best.avgFps ? c : best));
+
+    const withinMaxBudget = allCombos.filter(c => c.price <= priceMax);
+    const budgetCombo = withinMaxBudget.length > 0
+      ? withinMaxBudget.reduce((best, c) => (c.avgFps > best.avgFps ? c : best))
+      : allCombos.reduce((min, c) => (c.price < min.price ? c : min));
+
+    const performancePick = { label: "Meets Your Performance Target", ...performanceCombo };
+    const budgetPick = { label: "Fits Your Budget", ...budgetCombo };
+
+    return {
+      infeasible: true,
+      priceMin, priceMax, fpsMin, fpsMax, gamesToScore,
+      performancePick, budgetPick
+    };
   }
 
-  const byPriceAsc = [...withinBudget].sort((a, b) => a.price - b.price);
-  const byFpsDesc = [...withinBudget].sort((a, b) => b.avgFps - a.avgFps);
-  const byValueDesc = [...withinBudget].sort((a, b) => (b.avgFps / b.price) - (a.avgFps / a.price));
+  const byPriceAsc = [...inBand].sort((a, b) => a.price - b.price);
+  const byFpsDesc = [...inBand].sort((a, b) => b.avgFps - a.avgFps);
+  const byValueDesc = [...inBand].sort((a, b) => (b.avgFps / b.price) - (a.avgFps / a.price));
 
   const seen = new Set();
   const picks = [];
@@ -202,12 +258,12 @@ function generateRecommendations() {
 
   picks.sort((a, b) => a.price - b.price);
 
-  return { budget, gamesToScore, picks, overBudget: false };
+  return { infeasible: false, priceMin, priceMax, fpsMin, fpsMax, gamesToScore, picks };
 }
 
 /* ---------- Rendering: results ---------- */
 
-function recBuildCard(pick, gamesToScore) {
+function recBuildCard(pick, gamesToScore, note) {
   const perGameHtml = gamesToScore.length > 1
     ? `<ul class="rec-per-game">${gamesToScore.map(g => {
         const fps = calcFPS(g, pick.cpu, pick.gpu, pick.ramGB, recState.preset, recState.resolution, pick.chassisMult, 1.0);
@@ -226,6 +282,7 @@ function recBuildCard(pick, gamesToScore) {
   return `
     <div class="rec-build-card">
       <div class="rec-build-label">${pick.label}</div>
+      ${note ? `<p class="rec-build-note">${note}</p>` : ""}
       <div class="rec-build-price">${formatRecPrice(pick.price)}</div>
       <div class="rec-build-fps">${Math.round(pick.avgFps)}<span>avg FPS</span></div>
       <ul class="build-summary">
@@ -243,14 +300,26 @@ function recBuildCard(pick, gamesToScore) {
 function renderRecResults() {
   const container = document.getElementById("rec-results");
   const result = generateRecommendations();
+  const deviceWord = recState.mode === "desktop" ? "a desktop" : "a laptop";
 
-  if (result.overBudget) {
-    const c = result.picks[0];
+  if (result.infeasible) {
+    const perfNote = result.performancePick.avgFps >= result.fpsMin
+      ? `What ${result.fpsMin}+ FPS actually costs`
+      : `The best available - still short of your ${result.fpsMin} FPS target`;
+    const budgetNote = result.budgetPick.price <= result.priceMax
+      ? `Best performance up to ${formatRecPrice(result.priceMax)}`
+      : `The cheapest available - still over your ${formatRecPrice(result.priceMax)} budget`;
+
     container.innerHTML = `
       <div class="panel">
-        <h2 class="panel-title">Closest We Could Get</h2>
-        <p class="result-sub" style="margin-bottom:16px;">Nothing in our part list fits a ${formatRecPrice(result.budget)} budget for ${recState.mode === "desktop" ? "a desktop" : "a laptop"} - here's the cheapest option available, which runs a bit over.</p>
-        <div class="rec-build-grid">${recBuildCard(c, result.gamesToScore)}</div>
+        <h2 class="panel-title">That Combination Isn't Achievable</h2>
+        <div class="result-bottleneck warn" style="margin-bottom:18px;">
+          Hitting at least ${result.fpsMin} FPS for ${deviceWord} within a ${formatRecPrice(result.priceMin)} - ${formatRecPrice(result.priceMax)} budget isn't possible with the parts we track. Here are the two closest alternatives - one keeps your performance target and shows the real cost, the other keeps your budget and shows the real performance.
+        </div>
+        <div class="rec-build-grid">
+          ${recBuildCard(result.performancePick, result.gamesToScore, perfNote)}
+          ${recBuildCard(result.budgetPick, result.gamesToScore, budgetNote)}
+        </div>
       </div>
     `;
     container.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -264,7 +333,7 @@ function renderRecResults() {
   container.innerHTML = `
     <div class="panel">
       <h2 class="panel-title">Recommended Builds</h2>
-      <p class="result-sub" style="margin-bottom:16px;">Estimated FPS ${gamesNote}, at ${PRESET_LABELS[recState.preset]} preset / ${RES_LABELS_REC[recState.resolution]}. All builds fit within your ${formatRecPrice(result.budget)} budget.</p>
+      <p class="result-sub" style="margin-bottom:16px;">Estimated FPS ${gamesNote}, at ${PRESET_LABELS[recState.preset]} preset / ${RES_LABELS_REC[recState.resolution]}. Showing builds between ${formatRecPrice(result.priceMin)} and ${formatRecPrice(result.priceMax)} that reach at least ${result.fpsMin} FPS.</p>
       <div class="rec-build-grid">
         ${result.picks.map(p => recBuildCard(p, result.gamesToScore)).join("")}
       </div>
@@ -279,6 +348,8 @@ function init() {
   renderRecCategoryTabs();
   renderRecGameGrid();
   renderRecSettings();
+  setupRangeSlider("fps-min", "fps-max", "fps-min-label", "fps-max-label");
+  setupRangeSlider("price-min", "price-max", "price-min-label", "price-max-label");
 
   document.querySelectorAll(".mode-tab").forEach(tab => {
     tab.addEventListener("click", () => switchRecMode(tab.dataset.mode));
