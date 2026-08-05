@@ -573,6 +573,7 @@ function renderCompare() {
       <tr><td></td><td>Saved Build</td><td>Comparison Build</td><td>Difference</td></tr>
       <tr><td>Estimated Price</td><td>${formatPrice(priceA)}</td><td>${formatPrice(priceB)}</td><td>${priceDiffText}</td></tr>
     </table>
+    <p class="rec-disclaimer">These totals only cover the CPU, GPU, RAM, and ${state.mode === "desktop" ? "motherboard" : "chassis"}. A working PC also needs storage, a power supply, a case, and cooling fans - roughly $200 to $350 more. That's also why prebuilts cost more than the same parts added up: those components are already included.</p>
   `;
 
   let comparisonHtml;

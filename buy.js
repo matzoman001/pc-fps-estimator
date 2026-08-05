@@ -100,7 +100,7 @@ function renderYourParts(selected) {
 
   return `
     <h3 class="buy-section-title">Your Parts</h3>
-    <p class="result-sub" style="margin-bottom:10px;">Based on what you picked on the FPS Estimator page.</p>
+    <p class="result-sub" style="margin-bottom:10px;">Based on the build you brought over.</p>
     ${rows}
   `;
 }

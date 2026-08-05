@@ -271,13 +271,20 @@ function recBuildCard(pick, gamesToScore, note) {
       }).join("")}</ul>`
     : "";
 
-  const params = new URLSearchParams();
-  params.set("m", recState.mode === "desktop" ? "d" : "l");
-  params.set("c", pick.cpu.id);
-  params.set("v", pick.gpu.id);
-  params.set("a", pick.ram.id);
-  params.set("t", "ddr4");
-  params.set("e", pick.extra.id);
+  const builderParams = new URLSearchParams();
+  builderParams.set("m", recState.mode === "desktop" ? "d" : "l");
+  builderParams.set("c", pick.cpu.id);
+  builderParams.set("v", pick.gpu.id);
+  builderParams.set("a", pick.ram.id);
+  builderParams.set("t", "ddr4");
+  builderParams.set("e", pick.extra.id);
+
+  const buyParams = new URLSearchParams();
+  buyParams.set("mode", recState.mode === "desktop" ? "d" : "l");
+  buyParams.set("cpu", pick.cpu.id);
+  buyParams.set("gpu", pick.gpu.id);
+  buyParams.set("ram", pick.ram.id);
+  buyParams.set("extra", pick.extra.id);
 
   return `
     <div class="rec-build-card">
@@ -292,7 +299,10 @@ function recBuildCard(pick, gamesToScore, note) {
         <li>${recState.mode === "desktop" ? "Motherboard" : "Chassis"}: <span>${pick.extra.name}</span></li>
       </ul>
       ${perGameHtml}
-      <a class="pill-btn rec-customize-btn" href="builder.html?${params.toString()}">Customize This Build</a>
+      <div class="rec-card-actions">
+        <a class="pill-btn rec-card-btn" href="builder.html?${builderParams.toString()}">Compare With Other Builds</a>
+        <a class="pill-btn rec-card-btn secondary" href="buy.html?${buyParams.toString()}">Where to Buy These Parts</a>
+      </div>
     </div>
   `;
 }
