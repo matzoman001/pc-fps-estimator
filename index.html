@@ -10,7 +10,11 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#0c0d38">
 </head>
-<body>
+<body class="landing">
+
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+<div class="bg-glow bg-glow-3"></div>
 
 <header class="site-header">
   <div class="header-inner">
@@ -18,135 +22,37 @@
   </div>
 </header>
 
-<section class="type-toggle-section">
-  <span class="type-toggle-label">Choose Your PC Type</span>
-  <nav class="mode-tabs" role="tablist" aria-label="Choose PC type">
-    <button class="mode-tab active" data-mode="desktop" role="tab" aria-selected="true">Desktop Build</button>
-    <button class="mode-tab" data-mode="laptop" role="tab" aria-selected="false">Laptop Build</button>
-  </nav>
-</section>
+<main class="landing-hero">
+  <h2 class="landing-title">What do you want to do?</h2>
+  <p class="landing-subtitle">Pick a path below. You can always switch between them later.</p>
 
-<main class="layout">
+  <div class="landing-choices">
 
-  <section class="main-column">
+    <a class="landing-card" href="builder.html">
+      <div class="landing-icon landing-icon-build" aria-hidden="true"></div>
+      <div class="landing-card-title">Build &amp; Compare Your Own PC</div>
+      <div class="landing-card-desc">Pick your own CPU, GPU, RAM, and more, then see estimated FPS across 20+ games at your chosen settings. Save builds side by side to compare performance and price, desktop or laptop.</div>
+    </a>
 
-    <div class="panel" id="parts-panel">
-      <h2 class="panel-title">1. Choose Your Parts</h2>
-      <div class="parts-grid" id="parts-grid"></div>
-    </div>
+    <a class="landing-card" href="recommend.html">
+      <div class="landing-icon landing-icon-wizard" aria-hidden="true"></div>
+      <div class="landing-card-title">Get a PC Built For You</div>
+      <div class="landing-card-desc">Tell us your budget, the games you play, and the performance you're after. We'll generate a few build options that fit, ready to fine-tune in the full builder.</div>
+    </a>
 
-    <div class="panel" id="settings-panel">
-      <h2 class="panel-title">2. Graphics Settings</h2>
-      <div class="settings-row">
-        <div class="settings-group">
-          <span class="settings-label">Quality Preset</span>
-          <div class="pill-group" id="preset-group"></div>
-        </div>
-        <div class="settings-group">
-          <span class="settings-label">Resolution</span>
-          <div class="pill-group" id="resolution-group"></div>
-        </div>
-      </div>
-    </div>
+    <a class="landing-card" href="buy.html">
+      <div class="landing-icon landing-icon-buy" aria-hidden="true"></div>
+      <div class="landing-card-title">Where to Buy Parts</div>
+      <div class="landing-card-desc">Skip straight to shopping links and price estimates for individual parts, or browse prebuilt desktops and laptops instead.</div>
+    </a>
 
-    <div class="panel" id="game-panel">
-      <h2 class="panel-title">3. Choose a Game</h2>
-      <div class="category-tabs" id="category-tabs"></div>
-      <div class="game-grid" id="game-grid"></div>
-    </div>
-
-    <div class="panel" id="bottom-results-panel">
-      <h2 class="panel-title">Detailed Results</h2>
-      <div id="bottom-results"></div>
-    </div>
-
-    <div class="panel" id="compare-panel">
-      <h2 class="panel-title">Compare Builds</h2>
-      <div id="compare-content"></div>
-    </div>
-
-    <div class="panel cta-panel" id="buy-cta-panel">
-      <h2 class="panel-title">Ready to Build or Buy?</h2>
-      <p class="result-sub" style="margin-bottom:16px;">See where to find these parts, or browse prebuilt desktops and laptops instead.</p>
-      <a class="pill-btn cta-btn" id="buy-link" href="buy.html">See Where to Buy</a>
-    </div>
-
-  </section>
-
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-card">
-      <h2 class="sidebar-title">Estimated Performance</h2>
-      <div id="sidebar-content"></div>
-      <div class="share-row">
-        <input type="text" id="share-link-input" readonly aria-label="Shareable link">
-        <button class="pill-btn" id="copy-link-btn" type="button">Copy Link</button>
-      </div>
-      <p class="copy-feedback" id="copy-feedback"></p>
-    </div>
-
-    <div class="device-visual" id="device-visual">
-      <div class="cube-viewport">
-
-        <div class="cube-scene" id="desktop-3d-scene">
-          <div class="cube-drag" id="desktop-3d-drag">
-            <div class="tower-box">
-              <div class="tower-face tower-front">
-                <span class="power-led"></span>
-                <div class="tower-fan"></div>
-                <div class="tower-vents"></div>
-                <div class="tower-grille"></div>
-                <div class="tower-light-bar"></div>
-              </div>
-              <div class="tower-face tower-back"></div>
-              <div class="tower-face tower-left"></div>
-              <div class="tower-face tower-right">
-                <div class="tower-side-vent"></div>
-                <div class="tower-side-vent"></div>
-                <div class="tower-side-vent"></div>
-              </div>
-              <div class="tower-face tower-top"></div>
-              <div class="tower-face tower-bottom"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="cube-scene" id="laptop-3d-scene">
-          <div class="cube-drag" id="laptop-3d-drag">
-            <div class="laptop-base">
-              <div class="lb-face lb-front"></div>
-              <div class="lb-face lb-back"></div>
-              <div class="lb-face lb-left"></div>
-              <div class="lb-face lb-right"></div>
-              <div class="lb-face lb-top"></div>
-              <div class="lb-face lb-bottom"></div>
-            </div>
-            <div class="laptop-screen-pivot">
-              <div class="laptop-screen">
-                <div class="ls-face ls-front"><span class="screen-glow"></span></div>
-                <div class="ls-face ls-back"></div>
-                <div class="ls-face ls-left"></div>
-                <div class="ls-face ls-right"></div>
-                <div class="ls-face ls-top"></div>
-                <div class="ls-face ls-bottom"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-      <p class="device-caption" id="device-caption">Desktop Build</p>
-      <p class="device-drag-hint">Drag to rotate</p>
-    </div>
-  </aside>
-
+  </div>
 </main>
 
 <footer class="site-footer">
   <p>FPS values are estimates from a simplified relative-performance model, not lab-measured benchmarks. Actual results vary by game version, drivers, and system configuration.</p>
 </footer>
 
-<script src="data.js"></script>
-<script src="app.js"></script>
 <script src="register-sw.js"></script>
 </body>
 </html>

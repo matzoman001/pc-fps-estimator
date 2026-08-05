@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Get a PC Built For You - PC Game FPS Estimator</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0c0d38">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <h1 class="site-title">Get a PC Built For You</h1>
+    <a class="back-link" href="index.html">&larr; Home</a>
+  </div>
+</header>
+
+<section class="type-toggle-section">
+  <span class="type-toggle-label">Choose Your PC Type</span>
+  <nav class="mode-tabs" role="tablist" aria-label="Choose PC type">
+    <button class="mode-tab active" data-mode="desktop" role="tab" aria-selected="true">Desktop Build</button>
+    <button class="mode-tab" data-mode="laptop" role="tab" aria-selected="false">Laptop Build</button>
+  </nav>
+</section>
+
+<main class="rec-layout">
+
+  <div class="panel" id="budget-panel">
+    <h2 class="panel-title">1. Your Budget</h2>
+    <p class="result-sub" style="margin-bottom:12px;">Roughly how much do you want to spend, in USD?</p>
+    <input type="number" id="budget-input" class="budget-input" value="1200" min="200" max="10000" step="50">
+  </div>
+
+  <div class="panel" id="rec-games-panel">
+    <h2 class="panel-title">2. Games You Play</h2>
+    <p class="result-sub" style="margin-bottom:12px;">Pick one or more. Leave blank and we'll optimize across a general mix instead.</p>
+    <div class="category-tabs" id="rec-category-tabs"></div>
+    <div class="game-grid" id="rec-game-grid"></div>
+  </div>
+
+  <div class="panel" id="rec-settings-panel">
+    <h2 class="panel-title">3. Performance You Want</h2>
+    <div class="settings-row">
+      <div class="settings-group">
+        <span class="settings-label">Quality Preset</span>
+        <div class="pill-group" id="rec-preset-group"></div>
+      </div>
+      <div class="settings-group">
+        <span class="settings-label">Resolution</span>
+        <div class="pill-group" id="rec-resolution-group"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel cta-panel">
+    <button class="pill-btn cta-btn" id="generate-btn" type="button">Get My Recommendations</button>
+  </div>
+
+  <div id="rec-results"></div>
+
+</main>
+
+<footer class="site-footer">
+  <p>Recommendations are generated from the same simplified performance model as the rest of this app, not real-time pricing or benchmark data. Double-check part compatibility and current prices before buying.</p>
+</footer>
+
+<script src="data.js"></script>
+<script src="recommend.js"></script>
+<script src="register-sw.js"></script>
+</body>
+</html>

@@ -1,12 +1,15 @@
-const CACHE_NAME = "pc-fps-estimator-v1";
+const CACHE_NAME = "pc-fps-estimator-v2";
 
 const PRECACHE_URLS = [
   "./",
   "index.html",
+  "builder.html",
+  "recommend.html",
   "buy.html",
   "style.css",
   "app.js",
   "buy.js",
+  "recommend.js",
   "data.js",
   "circuit-pattern.svg",
   "manifest.json",

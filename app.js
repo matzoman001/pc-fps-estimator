@@ -482,13 +482,22 @@ function startOver() {
   syncURL();
 }
 
-function buildSummaryList(cpu, gpu, ram, ramType, extra, mode) {
+function getBuildPrice(cpu, gpu, ram, extra) {
+  return (cpu.price || 0) + (gpu.price || 0) + (ram.price || 0) + (extra.price || 0);
+}
+
+function formatPrice(n) {
+  return "$" + n.toLocaleString();
+}
+
+function buildSummaryList(cpu, gpu, ram, ramType, extra, mode, price) {
   return `
     <ul class="build-summary">
       <li>CPU: <span>${cpu.name}</span></li>
       <li>GPU: <span>${gpu.name}</span></li>
       <li>RAM: <span>${ram.name} ${ramType.name}</span></li>
       <li>${mode === "desktop" ? "Motherboard" : "Chassis"}: <span>${extra.name}</span></li>
+      <li>Estimated Price: <span>${formatPrice(price)}</span></li>
     </ul>
   `;
 }
@@ -519,10 +528,12 @@ function renderCompare() {
     return;
   }
 
+  const priceA = getBuildPrice(partsA.cpu, partsA.gpu, partsA.ram, partsA.extra);
+
   const cardA = `
     <div class="compare-slot filled">
       <div class="compare-slot-title">Saved Build <span class="compare-slot-tag">${state.builds.A.mode === "desktop" ? "Desktop" : "Laptop"}</span></div>
-      ${buildSummaryList(partsA.cpu, partsA.gpu, partsA.ram, partsA.ramType, partsA.extra, state.builds.A.mode)}
+      ${buildSummaryList(partsA.cpu, partsA.gpu, partsA.ram, partsA.ramType, partsA.extra, state.builds.A.mode, priceA)}
     </div>
   `;
 
@@ -542,11 +553,26 @@ function renderCompare() {
     return;
   }
 
+  const priceB = getBuildPrice(partsB.cpu, partsB.gpu, partsB.ram, partsB.extra);
+
   const cardB = `
     <div class="compare-slot filled">
       <div class="compare-slot-title">Comparison Build <span class="compare-slot-tag">${state.builds.B.mode === "desktop" ? "Desktop" : "Laptop"}</span></div>
-      ${buildSummaryList(partsB.cpu, partsB.gpu, partsB.ram, partsB.ramType, partsB.extra, state.builds.B.mode)}
+      ${buildSummaryList(partsB.cpu, partsB.gpu, partsB.ram, partsB.ramType, partsB.extra, state.builds.B.mode, priceB)}
     </div>
+  `;
+
+  const priceDiff = priceB - priceA;
+  const priceDiffText = priceDiff === 0
+    ? "Same estimated price"
+    : (priceDiff > 0 ? `Comparison costs ${formatPrice(priceDiff)} more` : `Saved costs ${formatPrice(-priceDiff)} more`);
+
+  const priceHtml = `
+    <p class="result-sub" style="margin:16px 0 8px 0;">Price difference - what you'd pay more (or save) for the performance change</p>
+    <table class="summary-table compare-table">
+      <tr><td></td><td>Saved Build</td><td>Comparison Build</td><td>Difference</td></tr>
+      <tr><td>Estimated Price</td><td>${formatPrice(priceA)}</td><td>${formatPrice(priceB)}</td><td>${priceDiffText}</td></tr>
+    </table>
   `;
 
   let comparisonHtml;
@@ -579,6 +605,7 @@ function renderCompare() {
 
   container.innerHTML = `
     <div class="compare-slots">${cardA}${cardB}</div>
+    ${priceHtml}
     ${comparisonHtml}
     <div class="compare-actions">
       <button class="pill-btn save-build-btn" data-slot="B">Update Comparison Build</button>

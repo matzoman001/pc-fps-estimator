@@ -11,24 +11,38 @@ const GENERIC_TIERS = [
   {
     name: "Budget",
     desc: "Good for esports titles and older games at 1080p on Low-Medium settings. Typically pairs an entry CPU (like a Core i5 or Ryzen 5) with a GPU around the RTX 4060 / RX 7600 class.",
-    query: "budget gaming"
+    query: "budget gaming",
+    priceRange: "$600 - $900"
   },
   {
     name: "Mid-Range",
     desc: "Handles most modern games at 1080p-1440p on High settings. Typically a Core i5/i7 or Ryzen 5/7 with an RTX 4070-class GPU.",
-    query: "mid range gaming"
+    query: "mid range gaming",
+    priceRange: "$900 - $1,400"
   },
   {
     name: "High-End",
     desc: "Strong 1440p and entry-level 4K performance. Typically a Core i7/i9 or Ryzen 7/9 with an RTX 4080-class GPU.",
-    query: "high end gaming"
+    query: "high end gaming",
+    priceRange: "$1,600 - $2,200"
   },
   {
     name: "Enthusiast",
     desc: "Built for 4K and high refresh-rate gaming. Typically a top-tier CPU paired with an RTX 4090/5090-class GPU.",
-    query: "enthusiast extreme gaming"
+    query: "enthusiast extreme gaming",
+    priceRange: "$2,800+"
   }
 ];
+
+const REST_OF_SYSTEM_ESTIMATE = 350; // rough estimate for RAM, storage, PSU, case, etc. not itemized here
+
+function formatPrice(n) {
+  return "$" + n.toLocaleString();
+}
+
+function estimateSystemPrice(gpu, cpu) {
+  return (gpu.price || 0) + (cpu ? (cpu.price || 0) : 0) + REST_OF_SYSTEM_ESTIMATE;
+}
 
 function findInGroup(groupObj, id) {
   if (!id) return null;
@@ -63,9 +77,10 @@ function partIconHtml(type) {
 
 function renderPartRow(part, highlightIds, type) {
   const isHighlighted = highlightIds.includes(part.id);
+  const priceTag = typeof part.price === "number" ? `<span class="buy-part-price">Est. ${formatPrice(part.price)}</span>` : "";
   return `
     <div class="buy-part-row ${isHighlighted ? "highlighted" : ""}" id="part-${part.id}">
-      <div class="buy-part-name">${partIconHtml(type)}${part.name}${isHighlighted ? '<span class="buy-highlight-tag">Your Pick</span>' : ""}</div>
+      <div class="buy-part-name">${partIconHtml(type)}${part.name}${priceTag}${isHighlighted ? '<span class="buy-highlight-tag">Your Pick</span>' : ""}</div>
       ${buyLinksHtml(part.name)}
     </div>
   `;
@@ -135,11 +150,12 @@ function getSortedGpus(mode) {
   return all.sort((a, b) => a.score - b.score);
 }
 
-function tierCardHtml(title, desc, query) {
+function tierCardHtml(title, desc, query, priceLabel) {
   return `
     <div class="tier-card">
       <div class="tier-card-title">${title}</div>
       <p class="result-sub">${desc}</p>
+      ${priceLabel ? `<div class="tier-card-price">${priceLabel}</div>` : ""}
       ${buyLinksHtml(query)}
     </div>
   `;
@@ -155,7 +171,8 @@ function renderPersonalizedTiers(deviceLabel, deviceQueryWord, gpu, cpu) {
     cards.push(tierCardHtml(
       `Budget Alternative`,
       `A step down from your ${gpu.name} pick. Search for ${deviceQueryWord}s built around a ${lower.name}-class GPU for a cheaper option.`,
-      `${deviceQueryWord} gaming ${lower.name}`
+      `${deviceQueryWord} gaming ${lower.name}`,
+      `Est. ${formatPrice(estimateSystemPrice(lower, cpu))} total system`
     ));
   }
 
@@ -165,7 +182,8 @@ function renderPersonalizedTiers(deviceLabel, deviceQueryWord, gpu, cpu) {
   cards.push(tierCardHtml(
     `Matches Your Build`,
     matchDesc,
-    cpu ? `${deviceQueryWord} gaming ${gpu.name} ${cpu.name}` : `${deviceQueryWord} gaming ${gpu.name}`
+    cpu ? `${deviceQueryWord} gaming ${gpu.name} ${cpu.name}` : `${deviceQueryWord} gaming ${gpu.name}`,
+    `Est. ${formatPrice(estimateSystemPrice(gpu, cpu))} total system`
   ));
 
   if (idx >= 0 && idx < sortedGpus.length - 1) {
@@ -173,7 +191,8 @@ function renderPersonalizedTiers(deviceLabel, deviceQueryWord, gpu, cpu) {
     cards.push(tierCardHtml(
       `Higher-Tier Alternative`,
       `A step up from your ${gpu.name} pick. Search for ${deviceQueryWord}s built around a ${higher.name}-class GPU for more headroom.`,
-      `${deviceQueryWord} gaming ${higher.name}`
+      `${deviceQueryWord} gaming ${higher.name}`,
+      `Est. ${formatPrice(estimateSystemPrice(higher, cpu))} total system`
     ));
   }
 
@@ -184,7 +203,8 @@ function renderGenericTiers(deviceLabel, deviceQueryWord) {
   const cards = GENERIC_TIERS.map(tier => tierCardHtml(
     `${tier.name} ${deviceLabel}`,
     tier.desc,
-    `${tier.query} ${deviceQueryWord}`
+    `${tier.query} ${deviceQueryWord}`,
+    `Rough estimate: ${tier.priceRange}`
   ));
   return `<div class="tier-grid">${cards.join("")}</div>`;
 }

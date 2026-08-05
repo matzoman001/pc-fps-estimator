@@ -105,6 +105,216 @@ body {
   font-size: 1rem;
 }
 
+/* ---------- Landing page ---------- */
+
+body.landing {
+  position: relative;
+  overflow-x: hidden;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  animation: circuit-drift 60s linear infinite;
+}
+
+@keyframes circuit-drift {
+  from { background-position: 0 0; }
+  to { background-position: 220px 220px; }
+}
+
+.bg-glow {
+  position: fixed;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(70px);
+  background: radial-gradient(circle, rgba(130, 204, 118, 0.28), transparent 70%);
+  pointer-events: none;
+}
+
+.bg-glow-1 {
+  width: 420px;
+  height: 420px;
+  top: -100px;
+  left: -80px;
+  animation: glow-float-1 24s ease-in-out infinite;
+}
+
+.bg-glow-2 {
+  width: 360px;
+  height: 360px;
+  bottom: -120px;
+  right: -60px;
+  animation: glow-float-2 30s ease-in-out infinite;
+}
+
+.bg-glow-3 {
+  width: 300px;
+  height: 300px;
+  top: 40%;
+  left: 60%;
+  animation: glow-float-3 20s ease-in-out infinite;
+}
+
+@keyframes glow-float-1 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(60px, 50px); }
+}
+
+@keyframes glow-float-2 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-50px, -40px); }
+}
+
+@keyframes glow-float-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-40px, 30px) scale(1.15); }
+}
+
+.landing-hero {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 48px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.landing-title {
+  font-size: 2rem;
+  margin: 0 0 10px 0;
+}
+
+.landing-subtitle {
+  color: var(--text-dim);
+  margin: 0 0 40px 0;
+  font-size: 1rem;
+}
+
+.landing-choices {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  width: 100%;
+}
+
+.landing-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px 22px;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.landing-card:hover,
+.landing-card:focus-visible {
+  border-color: var(--accent);
+  transform: translateY(-4px);
+}
+
+.landing-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.landing-card-desc {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  transition: max-height 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
+}
+
+.landing-card:hover .landing-card-desc,
+.landing-card:focus-visible .landing-card-desc {
+  max-height: 160px;
+  opacity: 1;
+  margin-top: 12px;
+}
+
+.landing-icon {
+  position: relative;
+  width: 56px;
+  height: 40px;
+  margin-bottom: 26px;
+}
+
+.landing-icon-build {
+  border: 3px solid var(--accent);
+  border-radius: 6px;
+}
+
+.landing-icon-build::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-40%, -50%);
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 8px 0 8px 12px;
+  border-color: transparent transparent transparent var(--accent);
+}
+
+.landing-icon-build::after {
+  content: "";
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 14px;
+  background: var(--accent);
+  clip-path: polygon(30% 0%, 70% 0%, 100% 100%, 0% 100%);
+}
+
+.landing-icon-wizard {
+  height: 56px;
+  background: var(--accent);
+  clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
+}
+
+.landing-icon-buy {
+  height: 30px;
+  margin-top: 10px;
+  background: var(--accent);
+  clip-path: polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%);
+}
+
+.landing-icon-buy::before,
+.landing-icon-buy::after {
+  content: "";
+  position: absolute;
+  bottom: -14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.landing-icon-buy::before { left: 8px; }
+.landing-icon-buy::after { right: 8px; }
+
+@media (max-width: 800px) {
+  .landing-choices {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- Layout ---------- */
 
 .layout {
@@ -789,6 +999,100 @@ body {
   font-size: 0.8rem;
 }
 
+/* ---------- Recommend page ---------- */
+
+.rec-layout {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.budget-input {
+  width: 160px;
+  background: var(--bg-card-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 1rem;
+}
+
+.rec-build-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+.rec-build-card {
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rec-build-label {
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+.rec-build-price {
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.rec-build-fps {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.rec-build-fps span {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  font-weight: 400;
+  text-transform: uppercase;
+  margin-left: 6px;
+}
+
+.rec-per-game {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.rec-per-game li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rec-per-game li span {
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.rec-customize-btn {
+  margin-top: auto;
+  text-align: center;
+  text-decoration: none;
+}
+
 /* ---------- Buy page ---------- */
 
 .buy-layout {
@@ -926,6 +1230,16 @@ body {
   text-transform: uppercase;
 }
 
+.buy-part-price {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
 .buy-links {
   display: flex;
   gap: 8px;
@@ -957,6 +1271,12 @@ body {
 
 .tier-card-title {
   font-weight: 700;
+}
+
+.tier-card-price {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent);
 }
 
 /* ---------- Responsive ---------- */
